@@ -145,15 +145,35 @@
         public void Create_ArgumentException_ReturnsBadRequest()
         {
             var dal = Substitute.For<IEntrantDal>();
-            dal.Create(null).Throws(new ArgumentException());
+            dal.Create(null).ThrowsForAnyArgs(new ArgumentException());
 
             var controller = new EntrantController(dal);
 
-            var action = controller.Create(null);
+            var entrant = new Entrant { FirstName = "First2", LastName = "Last2" };
+            var action = controller.Create(entrant);
 
             Assert.That(action, Is.TypeOf<BadRequestObjectResult>());
         }
 
+        [TestCase("", "name")]
+        [TestCase("name", "")]
+        [TestCase(" ", "name")]
+        [TestCase("name", " ")]
+        [TestCase(null, "name")]
+        [TestCase("name", null)]
+        [TestCase("<mark up>", "name")]
+        [TestCase("name", "<mark up>")]
+        public void Create_BadNameArguments_ReturnsBadRequest(string firstName, string secondName)
+        {
+            var dal = Substitute.For<IEntrantDal>();
+
+            var controller = new EntrantController(dal);
+
+            var entrant = new Entrant { FirstName = firstName, LastName = secondName };
+            var action = controller.Create(entrant);
+
+            Assert.That(action, Is.TypeOf<BadRequestObjectResult>());
+        }
         [Test]
         public void Create_OnException_ReturnsInternalError()
         {

@@ -1,6 +1,7 @@
 ﻿namespace Entrant.Controllers
 {
     using System;
+    using System.Web;
     using Dals;
     using log4net;
     using Microsoft.AspNetCore.Http;
@@ -19,7 +20,6 @@
         /// </summary>
         private readonly IEntrantDal _entrantDal;
 
-
         private static readonly ILog Logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         /// <summary>
@@ -32,7 +32,6 @@
             Logger.Info("starting Entrant Controller");
         }
 
-
         /// <summary>
         /// A rest operation the returns all the entrants in the store
         /// </summary>
@@ -40,7 +39,7 @@
         [HttpGet]
         public IActionResult GetAll()
         {
-            Logger.Info("start  GetAll()");
+            Logger.Info("start GetAll()");
 
             try
             {
@@ -49,12 +48,12 @@
             }
             catch (Exception e)
             {
-                Logger.Error("Error in  GetAll()", e);
+                Logger.Error("Error in GetAll()", e);
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
             finally
             {
-                Logger.Info("finish  GetAll()");
+                Logger.Info("finish GetAll()");
             }
         }
 
@@ -69,7 +68,7 @@
         [HttpGet("{id}", Name = "Get")]
         public IActionResult GetById(int id)
         {
-            Logger.Info("start  GetById(id)");
+            Logger.Info($"start GetById({id})");
 
             try
             {
@@ -83,12 +82,12 @@
             }
             catch (Exception e)
             {
-                Logger.Error("Error in  GetById(id)", e);
+                Logger.Error($"Error in GetById({id})", e);
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
             finally
             {
-                Logger.Info("finish  GetById(id)");
+                Logger.Info($"finish  GetById({id})");
             }
         }
 
@@ -105,13 +104,20 @@
 
             try
             {
-                if (string.IsNullOrWhiteSpace(entrant.FirstName))
+                if (entrant == null)
                 {
                     return BadRequest(entrant.FirstName);
                 }
 
-                if (string.IsNullOrWhiteSpace(entrant.LastName))
+                if (!ValidateName(entrant.FirstName))
                 {
+                    Logger.Info($"{nameof(entrant.FirstName)} is Invalid.");
+                    return BadRequest(entrant.FirstName);
+                }
+
+                if (!ValidateName(entrant.LastName))
+                {
+                    Logger.Info($"{nameof(entrant.LastName)} is Invalid.");
                     return BadRequest(entrant.LastName);
                 }
 
@@ -125,7 +131,7 @@
             }
             catch (Exception e)
             {
-                Logger.Error("Error in  Create()", e);
+                Logger.Error("Error in Create()", e);
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
             finally
@@ -142,7 +148,7 @@
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            Logger.Info("start  Delete(id)");
+            Logger.Info($"start  Delete({id})");
 
             try
             {
@@ -156,13 +162,16 @@
             }
             catch (Exception e)
             {
-                Logger.Error("Error in  Delete(id)", e);
+                Logger.Error($"Error in  Delete({id})", e);
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
             finally
             {
-                Logger.Info("finish  Delete(id)");
+                Logger.Info($"finish  Delete({id})");
             }
         }
+
+        private bool ValidateName( string name)
+            => !string.IsNullOrWhiteSpace(name) && name == HttpUtility.HtmlEncode(name);
     }
 }

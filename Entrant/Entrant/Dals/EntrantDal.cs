@@ -3,6 +3,7 @@
     using log4net;
     using Models;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -19,20 +20,15 @@
         /// <summary>
         /// A dictionary used to store <see cref="Entrant.Models.Entrant"/> objects
         /// </summary>
-        private readonly IDictionary<int, Entrant> _entrantMap;
-
-        /// <summary>
-        /// An object used to lock the _entrantMap
-        /// </summary>
-        private readonly object _lockObject = new object();
+        private readonly ConcurrentDictionary<int, Entrant> _entrantMap;
 
         /// <summary>
         /// A constuctor for the DAL
         /// </summary>
         /// <param name="entrantMap">A store of <see cref="Entrant.Models.Entrant"/> objects</param>
-        public EntrantDal(IDictionary<int, Entrant> entrantMap = null)
+        public EntrantDal(ConcurrentDictionary<int, Entrant> entrantMap = null)
         {
-            _entrantMap = entrantMap ?? new Dictionary<int, Entrant>();
+            _entrantMap = entrantMap ?? new ConcurrentDictionary<int, Entrant>();
         }
 
         /// <summary>
@@ -58,12 +54,17 @@
                 throw new ArgumentException($"{nameof(entrant.LastName)} can not be blank", nameof(entrant.LastName));
             }
 
-            lock (_lockObject)
+            entrant.Id = _entrantMap.Count + 1;
+            bool added = _entrantMap.TryAdd(entrant.Id, entrant);
+
+            if(! added)
             {
-                entrant.Id = _entrantMap.Count + 1;
-                _entrantMap.TryAdd(entrant.Id, entrant);
-                Logger.Info($"Created new Entrant id = {entrant.Id}");
+                var msg = "Create new Entrant failed";
+                Logger.Error(msg);
+                throw new Exception(msg);
             }
+
+            Logger.Info($"Created new Entrant id = {entrant.Id}");
 
             return entrant;
         }
@@ -79,23 +80,20 @@
 
             if (_entrantMap.ContainsKey(id))
             {
-                lock (_lockObject)
+                if (_entrantMap.TryGetValue(id, out var entrant))
                 {
-                    if (_entrantMap.TryGetValue(id, out var entrant))
-                    {
-                        deleted = _entrantMap.Remove(id);
-                    }
+                    deleted = _entrantMap.TryRemove(id, out var _);
                 }
             }
 
             if (deleted)
             {
-                Logger.Info($"Deleted Entrant id{id}");
+                Logger.Info($"Deleted Entrant id = {id}");
             }
             else
             {
                 Logger.Info($"Delete failed. Entrant id = {id} not found.");
-                throw new EntrantNotFoundException($"Entrant with Id={id} not found.");
+                throw new EntrantNotFoundException($"Entrant with Id = {id} not found.");
             }
         }
 
@@ -105,10 +103,7 @@
         /// <returns>collection of <see cref="Entrant.Models.Entrant"/> objects</returns>
         public IEnumerable<Entrant> GetAll()
         {
-            lock (_lockObject)
-            {
-                return _entrantMap.Values.ToList(); 
-            }
+            return _entrantMap.Values.ToList(); 
         }
 
         /// <summary>
@@ -121,17 +116,14 @@
         {
             if (_entrantMap.ContainsKey(id))
             {
-                lock (_lockObject)
+                if (_entrantMap.TryGetValue(id, out var entrant))
                 {
-                    if (_entrantMap.TryGetValue(id, out var entrant))
-                    {
-                        return entrant;
-                    }
+                    return entrant;
                 }
             }
 
             Logger.Info($"GetById failed. Entrant id = {id} not found.");
-            throw new EntrantNotFoundException($"Entrant with Id={id} not found.");
+            throw new EntrantNotFoundException($"Entrant with Id = {id} not found.");
         }
     }
 }

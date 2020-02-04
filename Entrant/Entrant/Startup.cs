@@ -11,6 +11,7 @@ namespace Entrant
     using Dals;
     using log4net.Config;
     using Models;
+    using System.Collections.Concurrent;
 
     public class Startup
     {
@@ -26,7 +27,7 @@ namespace Entrant
         {
             services.AddControllers();
 
-            var entrants = new Dictionary<int, Entrant>
+            var entrants = new ConcurrentDictionary<int, Entrant>
             {
                 [1] = new Entrant {Id = 1, FirstName = "First1", LastName = "Last1"},
                 [2] = new Entrant {Id = 2, FirstName = "First2", LastName = "Last2"},

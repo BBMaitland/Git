@@ -1,6 +1,7 @@
 ﻿namespace EntrantTests
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using Entrant.Dals;
@@ -25,7 +26,7 @@
         [TestCase(" ", "l")]
         public void Create_WithBlankNames_ThrowsArgumentExceptionException(string firstName, string lastName)
         {
-            var entrantMap = new Dictionary<int, Entrant>();
+            var entrantMap = new ConcurrentDictionary<int, Entrant>();
             var dal = new EntrantDal(entrantMap);
 
             var entrant = new Entrant {FirstName = firstName, LastName = lastName};
@@ -37,7 +38,7 @@
         [Test]
         public void Create_WithValidEntrant_AddToMap()
         {
-            var entrantMap = new  Dictionary<int, Entrant>();
+            var entrantMap = new ConcurrentDictionary<int, Entrant>();
             var dal = new EntrantDal(entrantMap);
             var entrant = new Entrant { FirstName = "firstName", LastName = "lastName" };
 
@@ -52,10 +53,8 @@
         public void Delete_WithValidId_RemoveItem()
         {
             var entrant = new Entrant { FirstName = "firstName", LastName = "lastName", Id=1 };
-            var entrantMap = new Dictionary<int, Entrant>
-            {
-                { entrant.Id, entrant }
-            };
+            var entrantMap = new ConcurrentDictionary<int, Entrant>();
+            entrantMap.TryAdd(entrant.Id, entrant );
 
             var dal = new EntrantDal(entrantMap);
             dal.Delete(entrant.Id);
@@ -67,10 +66,8 @@
         public void Delete_WithBadId_ThrowsNotFoundException()
         {
             var entrant = new Entrant { FirstName = "firstName", LastName = "lastName", Id = 1 };
-            var entrantMap = new Dictionary<int, Entrant>
-            {
-                { entrant.Id, entrant }
-            };
+            var entrantMap = new ConcurrentDictionary<int, Entrant>();
+            entrantMap.TryAdd(entrant.Id, entrant);
 
             var dal = new EntrantDal(entrantMap);
             Assert.Throws<EntrantNotFoundException>(() => dal.Delete(9));
@@ -84,7 +81,7 @@
         [Test]
         public void GetAll_Returns_ExpectEntrants()
         {
-            var entrantMap = new Dictionary<int, Entrant>
+            var entrantMap = new ConcurrentDictionary<int, Entrant>
             {
                 [1] = new Entrant { FirstName = "firstName", LastName = "lastName", Id = 1 },
                 [2] = new Entrant { FirstName = "firstName2", LastName = "lastName2", Id = 2 },
@@ -108,7 +105,7 @@
         [Test]
         public void GetById_WithValidId_ReturnsExpectedItem()
         {
-            var entrantMap = new Dictionary<int, Entrant>
+            var entrantMap = new ConcurrentDictionary<int, Entrant>
             {
                 [1] = new Entrant { FirstName = "firstName", LastName = "lastName", Id = 1 },
                 [2] = new Entrant { FirstName = "firstName2", LastName = "lastName2", Id = 2 },
@@ -124,7 +121,7 @@
         [Test]
         public void GetById_WithBadId_ThrowsNotFoundException()
         {
-            var entrantMap = new Dictionary<int, Entrant>
+            var entrantMap = new ConcurrentDictionary<int, Entrant>
             {
                 [1] = new Entrant { FirstName = "firstName", LastName = "lastName", Id = 1 },
                 [2] = new Entrant { FirstName = "firstName2", LastName = "lastName2", Id = 2 },

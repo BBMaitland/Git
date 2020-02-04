@@ -192,6 +192,42 @@
         }
 
         [Test]
+        public void Create_OnEmptyCollection_AddsEntrant()
+        {
+            var dal = new EntrantDal();
+
+            var controller = new EntrantController(dal);
+
+            var entrant = new Entrant { FirstName = "First", LastName = "Last" };
+            var action = controller.Create(entrant);
+            Assert.That(action, Is.TypeOf<CreatedAtActionResult>());
+        }
+
+        [Test]
+        public void Create_OnSparseCollection_AddsEntrant()
+        {
+            var dal = new EntrantDal();
+
+            var controller = new EntrantController(dal);
+
+            var entrant1 = new Entrant { FirstName = "First1", LastName = "Last1" };
+            var action1 = controller.Create(entrant1);
+            Assert.That(action1, Is.TypeOf<CreatedAtActionResult>());
+
+            var entrant2 = new Entrant { FirstName = "First2", LastName = "Last2" };
+            var action2 = controller.Create(entrant2);
+            Assert.That(action2, Is.TypeOf<CreatedAtActionResult>());
+
+            // create a gap by removing first entrant
+            var deleteAction = controller.Delete(1);
+            Assert.That(deleteAction, Is.TypeOf<OkResult>());
+
+            var newEntrant = new Entrant { FirstName = "First2", LastName = "Last2" };
+            var action = controller.Create(newEntrant);
+            Assert.That(action, Is.TypeOf<CreatedAtActionResult>());
+        }
+
+        [Test]
         public void Delete_DoesNotThrow()
         {
             var dal = Substitute.For<IEntrantDal>();

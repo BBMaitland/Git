@@ -54,7 +54,15 @@
                 throw new ArgumentException($"{nameof(entrant.LastName)} can not be blank", nameof(entrant.LastName));
             }
 
-            entrant.Id = _entrantMap.Count + 1;
+            if(_entrantMap.Count() > 0)
+            {
+                entrant.Id = _entrantMap.Keys.Max() + 1;
+            }
+            else
+            {
+                entrant.Id = 1;
+            }
+
             bool added = _entrantMap.TryAdd(entrant.Id, entrant);
 
             if(! added)

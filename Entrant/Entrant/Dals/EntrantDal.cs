@@ -6,6 +6,7 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
 
     /// <summary>
     /// A data access layer for persisting <see cref="Entrant.Models.Entrant"/> objects
@@ -23,12 +24,25 @@
         private readonly ConcurrentDictionary<int, Entrant> _entrantMap;
 
         /// <summary>
+        /// THe id of the last entrant created
+        /// </summary>
+        private int _lastId;
+        /// <summary>
         /// A constuctor for the DAL
         /// </summary>
         /// <param name="entrantMap">A store of <see cref="Entrant.Models.Entrant"/> objects</param>
         public EntrantDal(ConcurrentDictionary<int, Entrant> entrantMap = null)
         {
             _entrantMap = entrantMap ?? new ConcurrentDictionary<int, Entrant>();
+
+            if (_entrantMap.Count() > 0)
+            {
+                _lastId = _entrantMap.Keys.Max();
+            }
+            else
+            {
+                _lastId = 0;
+            }
         }
 
         /// <summary>
@@ -54,14 +68,7 @@
                 throw new ArgumentException($"{nameof(entrant.LastName)} can not be blank", nameof(entrant.LastName));
             }
 
-            if(_entrantMap.Count() > 0)
-            {
-                entrant.Id = _entrantMap.Keys.Max() + 1;
-            }
-            else
-            {
-                entrant.Id = 1;
-            }
+            entrant.Id = Interlocked.Increment(ref _lastId);
 
             bool added = _entrantMap.TryAdd(entrant.Id, entrant);
 
